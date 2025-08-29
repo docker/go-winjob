@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 // Package go-winjob provides means to manage windows job objects.
