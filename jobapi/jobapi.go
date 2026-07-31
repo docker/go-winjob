@@ -475,9 +475,17 @@ func OpenJobObject(desiredAccess, inheritHandles uintptr, jobName string) (sysca
 //
 // https://docs.microsoft.com/en-us/windows/desktop/api/jobapi2/nf-jobapi2-createjobobjectw
 func CreateJobObject(jobName string, sa *syscall.SecurityAttributes) (syscall.Handle, error) {
-	n, err := syscall.UTF16PtrFromString(jobName)
-	if err != nil {
-		return syscall.InvalidHandle, err
+	// A NULL name creates an anonymous job object. An empty string instead
+	// creates a named object in the caller's BaseNamedObjects namespace, which
+	// is denied in restricted sessions (for example a Secondary Logon session),
+	// so pass NULL rather than a pointer to an empty string.
+	var n *uint16
+	if jobName != "" {
+		var err error
+		n, err = syscall.UTF16PtrFromString(jobName)
+		if err != nil {
+			return syscall.InvalidHandle, err
+		}
 	}
 	h, _, lastErr := createJobObject.Call(
 		uintptr(unsafe.Pointer(sa)),

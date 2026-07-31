@@ -69,6 +69,20 @@ func requireNoError(t *testing.T, err error, msg ...string) {
 	}
 }
 
+// TestCreateWithEmptyName verifies that an empty name yields a usable job
+// object. The denial this guards against only reproduces in a restricted
+// session (for example a Secondary Logon session); a normal interactive session
+// accepts a named empty object too, so this is a happy-path smoke test, with the
+// restricted-session regression covered by Docker Desktop's run-as-user e2e.
+func TestCreateWithEmptyName(t *testing.T) {
+	job, err := winjob.Create("")
+	requireNoError(t, err, "Creating job object with empty name")
+	if job.Handle == syscall.InvalidHandle || job.Handle == 0 {
+		t.Fatal("expected a valid job object handle")
+	}
+	requireNoError(t, job.Close(), "Closing job object")
+}
+
 func TestInvalidJobObjectHandle(t *testing.T) {
 	var (
 		job      = &winjob.JobObject{Handle: syscall.InvalidHandle}
